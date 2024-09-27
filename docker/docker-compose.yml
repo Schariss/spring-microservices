@@ -1,0 +1,56 @@
+version: '2.1'
+
+services:
+  # Applies a label to each service launched. This becomes the DNS entry for the Docker instance when it starts,
+  # which is how other services access it
+  database:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "ostock_dev"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/1-init.sql
+      - ./data.sql:/docker-entrypoint-initdb.d/2-data.sql
+    networks:
+      backend:
+        # Specifies an alternative hostname for the service on the network
+        aliases:
+          - "database"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  configserver:
+    image: evato/configserver:0.0.1-SNAPSHOT
+    ports:
+      - "8071:8071"
+    networks:
+      backend:
+        aliases:
+          - "configserver"
+  licensing-service:
+    image: evato/licensing-service:0.0.2-SNAPSHOT
+#    build:
+#      context: .
+#      args:
+#        JAR_FILE: target/*.jar
+    environment:
+      SERVER_HOST_NAME: "configserver"
+      DB_HOST_NAME: "database"
+    depends_on:
+      database:
+        condition: service_healthy
+      configserver:
+        condition: service_started
+    ports:
+    - "8080:8080"
+    networks:
+      - backend
+networks:
+  backend:
+#    Default network is bridge, so we don't need to specify it
+    driver: bridge
