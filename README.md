@@ -55,8 +55,12 @@ the names _licensing-service_ and _licensing-service-dev_ that correspond respec
 the following params: vault.name and vault.pwd.
 
 The configuration is available under:
-- http://127.0.0.1:8200/v1/licensing-service/data/licensing-service
-- http://127.0.0.1:8200/v1/licensing-service/data/licensing-service-dev
+```bash
+curl -X "GET" http://127.0.0.1:8200/v1/licensing-service/data/licensing-service -H "X-Vault-Token: myroot"
+```
+```bash
+curl -X "GET" http://127.0.0.1:8200/v1/licensing-service/data/licensing-service-dev -H "X-Vault-Token: myroot"
+```
 
 __Response example__:
 ```json
