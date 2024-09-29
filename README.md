@@ -39,3 +39,107 @@ Keep in mind that if you have multiple instances of the service running, you mus
 One way to achieve this is by using a service discovery mechanism to retrieve all instances and send a POST request 
 to /refresh for each one. Another option is to use Spring Cloud Bus, which can broadcast configuration updates across all 
 instances, but this requires an additional middleware, such as RabbitMQ.
+
+## HashiCorp Vault
+Vault is another backend repository that we can use as a spring cloud config server backend. It's a tool allows us 
+to securely access secrets. We can define secrets as any piece of info we want to restrict or control access to, such as 
+passwords, certificates, API keys, and so forth.
+1. Launch docker-compose-infra.yml with :
+```bash
+docker-compose -f docker/docker-compose-infra.yml up
+```
+This command will launch a postgres DB with an instance of a Vault dev server.
+
+Go to Secretes Engine and create a new engine called _licensing-service_, choose kv v2, then create two new secrets with
+the names _licensing-service_ and _licensing-service-dev_ that correspond respect. to default and dev profiles, with
+the following params: vault.name and vault.pwd.
+
+The configuration is available under:
+- http://127.0.0.1:8200/v1/licensing-service/data/licensing-service
+- http://127.0.0.1:8200/v1/licensing-service/data/licensing-service-dev
+
+__Response example__:
+```json
+{
+    "request_id": "22483309-1e20-5163-017c-951f88a5b3cc",
+    "lease_id": "",
+    "renewable": false,
+    "lease_duration": 0,
+    "data": {
+        "data": {
+            "vault.name": "dev",
+            "vault.pwd": "MyLocalPWD"
+        },
+        "metadata": {
+            "created_time": "2024-09-29T08:20:01.699214334Z",
+            "custom_metadata": null,
+            "deletion_time": "",
+            "destroyed": false,
+            "version": 1
+        }
+    },
+    "wrap_info": null,
+    "warnings": null,
+    "auth": null,
+    "mount_type": "kv"
+}
+```
+From the config server, the properties are available under:
+- http://localhost:8071/licensing-service/default
+- http://localhost:8071/licensing-service/dev
+
+__Response example__:
+```json
+{
+    "name": "licensing-service",
+    "profiles": [
+        "dev"
+    ],
+    "label": null,
+    "version": null,
+    "state": null,
+    "propertySources": [
+        {
+            "name": "vault:licensing-service-dev",
+            "source": {
+                "vault.name": "dev",
+                "vault.pwd": "MyLocalPWD"
+            }
+        },
+        {
+            "name": "vault:licensing-service",
+            "source": {
+                "vault.name": "default",
+                "vault.pwd": "pwd"
+            }
+        },
+        {
+            "name": "https://github.com/username/spring-ms-config.git/licensing-service-dev.properties",
+            "source": {
+                "example.property": "I AM DEV",
+                "spring.datasource.url": "jdbc:postgresql://${DB_HOST_NAME:localhost}:5432/ostock_dev",
+                "spring.datasource.username": "postgres",
+                "spring.datasource.password": "postgres"
+            }
+        },
+        {
+            "name": "https://github.com/username/spring-ms-config.git/licensing-service.properties",
+            "source": {
+                "example.property": "I AM THE DEFAULT VALUE",
+                "spring.jpa.hibernate.ddl-auto": "none",
+                "spring.jpa.database": "POSTGRESQL",
+                "spring.datasource.platform": "postgres",
+                "spring.jpa.show-sql": "true",
+                "spring.jpa.hibernate.naming-strategy": "org.hibernate.cfg.ImprovedNamingStrategy",
+                "spring.jpa.properties.hibernate.dialect": "org.hibernate.dialect.PostgreSQLDialect",
+                "spring.database.driverClassName": "org.postgresql.Driver",
+                "spring.datasource.testWhileIdle": "true",
+                "spring.datasource.validationQuery": "SELECT 1",
+                "management.endpoints.web.exposure.include": "*",
+                "management.endpoints.enabled-by-default": "true",
+                "local.lang": "en"
+            }
+        }
+    ]
+}
+``` 

@@ -13,10 +13,11 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.0</version>
+        <version>3.3.4</version>
     </parent>
 
     <properties>
+        <java.version>18</java.version>
         <exec-maven.version>3.4.1</exec-maven.version>
     </properties>
 
